@@ -29,13 +29,26 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const res = await API.post('/auth/login', { email, password });
-    if (res.data.success) {
-      localStorage.setItem('natya_token', res.data.data.token);
-      setUser(res.data.data);
-      return { success: true };
+    try {
+      const res = await API.post('/auth/login', { email, password });
+      if (res.data.success) {
+        // Response structural safety check (res.data.token or res.data.data.token)
+        const token = res.data.token || res.data.data?.token;
+        const userData = res.data.user || res.data.data;
+
+        localStorage.setItem('natya_token', token);
+        setUser(userData);
+        return { success: true };
+      }
+      return { success: false, message: res.data.message };
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err.response?.data?.message ||
+          'Login failed. Please verify server connection.',
+      };
     }
-    return { success: false, message: res.data.message };
   };
 
   const logout = () => {
